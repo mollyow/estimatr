@@ -63,30 +63,26 @@
 #'
 lh_robust <- function(..., data, linear_hypothesis) {
 
-
   requireNamespace("car")
-
-  clustered <-   "clusters" %in% as.character(names(match.call())[-1])
-
-  se_type <- eval_tidy(quos(...)$se_type)
-
-  alpha <- ifelse(is.null(eval_tidy(quos(...)$alpha)), 0.05, eval_tidy(quos(...)$alpha))
-
-
-  # Checks
-  # This stop could also be limited to hypotheses involving more than one coefficient
-  if(!is.null(se_type) && se_type == "CR2")
-    stop("lh_robust not available for CR2 standard errors")
-
-  if(clustered  && is.null(se_type))
-    stop("lh_robust not available for CR2 standard errors; please specify CR0")
-
-  if(length(linear_hypothesis) > 1)
-    stop("lh_robust currently implements tests for hypotheses involving linear combinations of variables but not joint hypotheses (for instance X1 = X2, but not X1 = 0 and X2=0")
-
 
   # fit lm_robust model
   lm_robust_fit <- lm_robust(...,  data = data)
+
+  alpha <- lm_robust_fit$alpha
+
+  # Checks
+  # This stop could also be limited to hypotheses involving more than one coefficient
+  if(!is.null(lm_robust_fit$se_type) && lm_robust_fit$se_type == "CR2") {
+    stop("lh_robust not available for CR2 standard errors")
+  }
+
+  if(lm_robust_fit$clustered  && is.null(lm_robust_fit$se_type)) {
+    stop("lh_robust not available for CR2 standard errors; please specify CR0")
+  }
+
+  if(length(linear_hypothesis) > 1) {
+    stop("lh_robust currently implements tests for hypotheses involving linear combinations of variables but not joint hypotheses (for instance X1 = X2, but not X1 = 0 and X2=0")
+  }
 
   # calculate linear hypothesis
   car_lht <- car::linearHypothesis(
@@ -95,15 +91,16 @@ lh_robust <- function(..., data, linear_hypothesis) {
   estimate  <- drop(attr(car_lht, "value"))
   std.error <- sqrt(diag(attr(car_lht, "vcov")))
 
-  if(length(estimate) > 1)
+  if(length(estimate) > 1) {
     stop("lh_robust currently implements tests for hypotheses involving linear combinations of variables but not joint hypotheses (for instance X1 = X2, but not X1 = 0 and X2=0")
+  }
 
   df <- lm_robust_fit$df[1]
 
   # appropriate when all elements of df are identical
-  if(length(lm_robust_fit$df) >0 & var(lm_robust_fit$df > 0))
+  if(length(lm_robust_fit$df) >0 && var(lm_robust_fit$df > 0)) {
     warning("lh_robust inference may be inaccurate if degrees of freedom vary across coefficients")
-
+  }
 
   statistic <- estimate / std.error
   p.value <-  2 * pt(abs(statistic), df, lower.tail = FALSE)

@@ -1,4 +1,5 @@
 context("S3")
+set.seed(5)
 n <- 10
 dat <- data.frame(
   x = rep(0:1, times = 5),
@@ -187,7 +188,7 @@ test_that("tidy, glance, summary, and print work", {
     mpg ~ cyl + am,
     data = mtcars,
     se_type = "classical",
-    linear_hypothesis = c("cyl = am", "cyl = 3")
+    linear_hypothesis = "cyl = am"
   )
   tlho <- tidy(lho)
   slho <- summary(lho)
@@ -226,7 +227,7 @@ test_that("tidy, glance, summary, and print work", {
   # tidy adds rows for each LH
   expect_equal(
     tlho$term,
-    c("(Intercept)", "cyl", "am", "cyl = am", "cyl = 3")
+    c("(Intercept)", "cyl", "am", "cyl = am")
   )
 
   # glance only glances lm_robust object
@@ -246,19 +247,19 @@ test_that("tidy, glance, summary, and print work", {
   )
 
   expect_identical(
-    printsummary_lho[19:21],
+    printsummary_lho[19:20],
     capture.output(summary(lho$lh))
   )
 
   expect_output(
     print(lho$lh),
-    "Estimate.*cyl = am.*cyl = 3"
+    "Estimate.*cyl = am"
   )
 
   # print also gets right number of rows
   expect_equal(
     length(capture.output(print(lho$lh))),
-    3
+    2
   )
 
   ## horvitz_thompson

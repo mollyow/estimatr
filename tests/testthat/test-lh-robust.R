@@ -177,3 +177,28 @@ test_that("returns error when default CR2 are called", {
   expect_error(lh_robust(Y ~ Z * X, linear_hypothesis = c("Z"), data = dat, clusters = cl))
 })
 
+test_that("issue #405 fixed", {
+
+  library(estimatr)
+  nSize = 12
+  dat = data.frame(
+    x = rnorm(nSize),
+    e = rnorm(nSize),
+    # Irrelevant clusters for errors
+    eg = sample(2, nSize, replace=T)
+  )
+  dat$z = dat$x + dat$e
+
+  # already worked
+  fit <- lh_robust(z~x, data=dat, se_type='HC2', linear_hypothesis='x=0')
+
+  expect_equivalent(fit$lm_robust$conf.low[2],
+               fit$lh$conf.low[1])
+
+  # was broken
+  fit_2 <- lh_robust(z~x, data=dat, clusters=eg, se_type='stata', linear_hypothesis='x=0')
+
+  expect_equivalent(fit_2$lm_robust$conf.low[2],
+                    fit_2$lh$conf.low[1])
+
+})
